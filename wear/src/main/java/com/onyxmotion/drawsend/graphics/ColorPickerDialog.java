@@ -20,6 +20,7 @@ import android.os.Bundle;
 import android.app.Dialog;
 import android.content.Context;
 import android.graphics.*;
+import android.support.annotation.NonNull;
 import android.view.MotionEvent;
 import android.view.View;
 
@@ -97,8 +98,7 @@ public class ColorPickerDialog extends Dialog {
         private static final int CENTER_RADIUS = 32;
 
         private int floatToByte(float x) {
-            int n = Math.round(x);
-            return n;
+            return Math.round(x);
         }
         private int pinToByte(int n) {
             if (n < 0) {
@@ -164,7 +164,7 @@ public class ColorPickerDialog extends Dialog {
         private static final float PI = 3.1415926f;
 
         @Override
-        public boolean onTouchEvent(MotionEvent event) {
+        public boolean onTouchEvent(@NonNull MotionEvent event) {
             float x = event.getX() - CENTER_X;
             float y = event.getY() - CENTER_Y;
             boolean inCenter = Math.sqrt(x*x + y*y) <= CENTER_RADIUS;

@@ -5,16 +5,16 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.support.annotation.NonNull;
+import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
 
 /**
+ * Draw on this view
  * Created by Vivek on 2015-02-13.
  */
 public class PaintView extends View {
-
-	private static final float MINP = 0.25f;
-	private static final float MAXP = 0.75f;
 
 	private Paint mPaint;
 	private Bitmap mBitmap;
@@ -22,10 +22,27 @@ public class PaintView extends View {
 	private Path mPath;
 	private Paint mBitmapPaint;
 
-	public PaintView(Context c) {
-		super(c);
+	public PaintView(Context context) {
+		super(context);
+		setup();
+	}
 
+	public PaintView(Context context, AttributeSet attrs) {
+		super(context, attrs);
+		setup();
+	}
 
+	public PaintView(Context context, AttributeSet attrs, int defStyleAttr) {
+		super(context, attrs, defStyleAttr);
+		setup();
+	}
+
+	public PaintView(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
+		super(context, attrs, defStyleAttr, defStyleRes);
+		setup();
+	}
+
+	public void setup() {
 		mPaint = new Paint();
 		mPaint.setAntiAlias(true);
 		mPaint.setDither(true);
@@ -47,7 +64,7 @@ public class PaintView extends View {
 
 	@Override
 	protected void onDraw(Canvas canvas) {
-		canvas.drawColor(0xFFFFFF);
+		canvas.drawColor(0xFFFFFFFF);
 
 		canvas.drawBitmap(mBitmap, 0, 0, mBitmapPaint);
 
@@ -56,6 +73,10 @@ public class PaintView extends View {
 
 	private float mX, mY;
 	private static final float TOUCH_TOLERANCE = 4;
+
+	public int getColor() {
+		return mPaint.getColor();
+	}
 
 	public void setColor(int color) {
 		mPaint.setColor(color);
@@ -85,7 +106,7 @@ public class PaintView extends View {
 	}
 
 	@Override
-	public boolean onTouchEvent(MotionEvent event) {
+	public boolean onTouchEvent(@NonNull MotionEvent event) {
 		float x = event.getX();
 		float y = event.getY();
 

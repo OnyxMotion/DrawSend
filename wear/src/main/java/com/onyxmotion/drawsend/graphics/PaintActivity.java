@@ -31,31 +31,21 @@ public class PaintActivity extends Activity
         implements ColorPickerDialog.OnColorChangedListener {
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_paint);
 
 		paintView = (PaintView) findViewById(R.id.paint_view);
 
-        mEmboss = new EmbossMaskFilter(new float[] { 1, 1, 1 },
-                                       0.4f, 6, 3.5f);
-
-        mBlur = new BlurMaskFilter(8, BlurMaskFilter.Blur.NORMAL);
     }
 
 	private PaintView paintView;
-    private MaskFilter  mEmboss;
-    private MaskFilter  mBlur;
 
     public void colorChanged(int color) {
         paintView.setColor(color);
     }
 
-    private static final int COLOR_MENU_ID = Menu.FIRST;
-    private static final int EMBOSS_MENU_ID = Menu.FIRST + 1;
-    private static final int BLUR_MENU_ID = Menu.FIRST + 2;
-    private static final int ERASE_MENU_ID = Menu.FIRST + 3;
-    private static final int SRCATOP_MENU_ID = Menu.FIRST + 4;
-
-
+	public void onColorPickerClick(View view) {
+		new ColorPickerDialog(this, this, paintView.getColor()).show();
+	}
 }
