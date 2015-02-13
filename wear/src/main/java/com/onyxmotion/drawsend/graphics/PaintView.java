@@ -10,6 +10,8 @@ import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
 
+import java.util.ArrayList;
+
 /**
  * Draw on this view
  * Created by Vivek on 2015-02-13.
@@ -126,4 +128,14 @@ public class PaintView extends View {
 		}
 		return true;
 	}
+
+	public Bitmap getBitmap() {
+		return mBitmap;
+	}
+
+	public void clear() {
+		mBitmap = Bitmap.createBitmap(getWidth(), getHeight(), Bitmap.Config.ARGB_8888);
+		mCanvas = new Canvas(mBitmap);
+	}
+
 }

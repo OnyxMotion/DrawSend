@@ -17,18 +17,20 @@
 package com.onyxmotion.drawsend.graphics;
 
 import android.app.Activity;
-import android.content.Context;
+import android.content.Intent;
 import android.graphics.*;
 import android.os.Bundle;
-import android.view.Menu;
-import android.view.MenuItem;
-import android.view.MotionEvent;
 import android.view.View;
 
 import com.onyxmotion.drawsend.R;
+import com.onyxmotion.drawsend.graphics.communication.DataHandler;
+import com.onyxmotion.drawsend.graphics.communication.WearService;
+
+import java.io.ByteArrayOutputStream;
 
 public class PaintActivity extends Activity
-        implements ColorPickerDialog.OnColorChangedListener {
+    implements ColorPickerDialog.OnColorChangedListener,
+	View.OnClickListener {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -36,7 +38,10 @@ public class PaintActivity extends Activity
         setContentView(R.layout.activity_paint);
 
 		paintView = (PaintView) findViewById(R.id.paint_view);
-
+	    findViewById(R.id.colorpicker).setOnClickListener(this);
+	    findViewById(R.id.send).setOnClickListener(this);
+	    findViewById(R.id.undo).setOnClickListener(this);
+	    findViewById(R.id.home).setOnClickListener(this);
     }
 
 	private PaintView paintView;
@@ -45,7 +50,37 @@ public class PaintActivity extends Activity
         paintView.setColor(color);
     }
 
-	public void onColorPickerClick(View view) {
+	public void onColorPickerClick() {
 		new ColorPickerDialog(this, this, paintView.getColor()).show();
+	}
+
+	public void sendImage() {
+		Bitmap bitmap = paintView.getBitmap();
+		//	    setContentView(R.layout.view_image);
+		//	    ((ImageView) findViewById(R.id.test_image)).setImageBitmap(bitmap);
+		ByteArrayOutputStream stream = new ByteArrayOutputStream();
+		bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
+		byte[] byteArray = stream.toByteArray();
+		startService(new Intent(this, WearService.class)
+			.putExtra(DataHandler.WHAT, DataHandler.WEAR_SEND_IMAGE)
+			.putExtra(DataHandler.OBJ, byteArray));
+	}
+
+	public void undo() {
+		paintView.clear();
+	}
+
+	public void changePage() {
+
+	}
+
+	@Override
+	public void onClick(View view) {
+		switch (view.getId()) {
+			case R.id.colorpicker: onColorPickerClick(); break;
+			case R.id.send: sendImage(); break;
+			case R.id.undo: undo(); break;
+			case R.id.home: changePage(); break;
+		}
 	}
 }

@@ -15,7 +15,7 @@
         android:layout_height="53.3dp"
         android:layout_marginLeft="-10dp"
         android:layout_marginTop="-10dp"
-
+        android:visibility="gone"
         android:background="@color/white"
         />
 
