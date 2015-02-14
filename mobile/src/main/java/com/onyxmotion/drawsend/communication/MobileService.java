@@ -1,4 +1,4 @@
-package com.onyxmotion.drawsend.graphics.communication;
+package com.onyxmotion.drawsend.communication;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -8,7 +8,7 @@ import com.google.android.gms.wearable.DataEventBuffer;
 import com.google.android.gms.wearable.MessageEvent;
 import com.google.android.gms.wearable.Node;
 import com.google.android.gms.wearable.WearableListenerService;
-import com.onyxmotion.drawsend.graphics.helper.DebugLog;
+import com.onyxmotion.drawsend.helper.DebugLog;
 
 /**
  * Responsible for all data side functionality
@@ -16,19 +16,19 @@ import com.onyxmotion.drawsend.graphics.helper.DebugLog;
  * Generally, passes data over to DataHandler
  * Created by Vivek on 2014-10-27.
  */
-public class WearService extends WearableListenerService {
+public class MobileService extends WearableListenerService {
 
-	private DataHandler handler;
+	private MobileHandler handler;
 
 	@Override
 	public void onCreate() {
 		super.onCreate();
-		handler = new DataHandler(getApplicationContext());
+		handler = new MobileHandler(getApplicationContext());
 	}
 
 	@Override
 	public void onDestroy() {
-		handler.sendEmptyMessage(DataHandler.ON_DESTROY);
+		handler.sendEmptyMessage(MobileHandler.ON_DESTROY);
 		handler = null;
         super.onDestroy();
 	}
@@ -45,15 +45,15 @@ public class WearService extends WearableListenerService {
 
 	@Override
 	public void onMessageReceived(MessageEvent message) {
-		handler.sendObjectMessage(DataHandler.WEAR_RECEIVE_MESSAGE,
+		handler.sendObjectMessage(MobileHandler.WEAR_RECEIVE_MESSAGE,
 			message.getPath());
 	}
 
 	@Override
 	public void onDataChanged(DataEventBuffer dataEvents) {
-		DebugLog.LOGD(this, "I'm receiving an object");
+		DebugLog.LOGD(this, "Received an object");
 		if (!dataEvents.getStatus().isSuccess()) return;
-		handler.sendObjectMessage(DataHandler.WEAR_RECEIVE_OBJECT,
+		handler.sendObjectMessage(MobileHandler.WEAR_RECEIVE_OBJECT,
 			FreezableUtils.freezeIterable(dataEvents));
 		dataEvents.close();
 	}
@@ -78,7 +78,7 @@ public class WearService extends WearableListenerService {
 		Bundle extras;
 		if (intent != null && (extras = intent.getExtras()) != null)
 			handler.sendObjectMessage(
-				extras.getInt(DataHandler.WHAT), extras.get(DataHandler.OBJ));
+				extras.getInt(MobileHandler.WHAT), extras.get(MobileHandler.OBJ));
 
 		return START_NOT_STICKY;
 	}

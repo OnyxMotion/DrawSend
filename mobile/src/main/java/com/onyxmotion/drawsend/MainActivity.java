@@ -1,5 +1,10 @@
 package com.onyxmotion.drawsend;
 
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.app.ActionBar;
 import android.support.v4.app.Fragment;
@@ -10,57 +15,43 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.os.Build;
+import android.widget.ImageView;
+
+import com.onyxmotion.drawsend.communication.MobileHandler;
+import com.onyxmotion.drawsend.communication.MobileService;
+import com.onyxmotion.drawsend.helper.DebugLog;
 
 
 public class MainActivity extends ActionBarActivity {
+
+
+	private UXReceiver receiver;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
-		if (savedInstanceState == null) {
-			getSupportFragmentManager().beginTransaction()
-				.add(R.id.container, new PlaceholderFragment())
-				.commit();
-		}
+		receiver = new UXReceiver(this);
+		LocalBroadcastManager.getInstance(this).registerReceiver(receiver,
+			new IntentFilter(MobileHandler.ACTION));
+		DebugLog.LOGD(this, "I'm onCreate");
+
 	}
 
 
 	@Override
-	public boolean onCreateOptionsMenu(Menu menu) {
-		// Inflate the menu; this adds items to the action bar if it is present.
-		getMenuInflater().inflate(R.menu.menu_main, menu);
-		return true;
+	protected void onDestroy() {
+		stopService(new Intent(this, MobileService.class));
+		LocalBroadcastManager.getInstance(this).unregisterReceiver(receiver);
+		receiver = null;
+		super.onDestroy();
 	}
 
-	@Override
-	public boolean onOptionsItemSelected(MenuItem item) {
-		// Handle action bar item clicks here. The action bar will
-		// automatically handle clicks on the Home/Up button, so long
-		// as you specify a parent activity in AndroidManifest.xml.
-		int id = item.getItemId();
+	public void setImage(byte[] image) {
+		BitmapFactory.Options options = new BitmapFactory.Options();
 
-		//noinspection SimplifiableIfStatement
-		if (id == R.id.action_settings) {
-			return true;
-		}
-
-		return super.onOptionsItemSelected(item);
-	}
-
-	/**
-	 * A placeholder fragment containing a simple view.
-	 */
-	public static class PlaceholderFragment extends Fragment {
-
-		public PlaceholderFragment() {
-		}
-
-		@Override
-		public View onCreateView(LayoutInflater inflater, ViewGroup container,
-		                         Bundle savedInstanceState) {
-			View rootView = inflater.inflate(R.layout.fragment_main, container, false);
-			return rootView;
-		}
+		Bitmap bitmap = BitmapFactory.decodeByteArray(image, 0, image.length, options);
+		if (bitmap != null)
+			((ImageView) findViewById(R.id.test_image)).setImageBitmap(bitmap);
 	}
 }
