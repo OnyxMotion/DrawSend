@@ -1,4 +1,4 @@
-package com.onyxmotion.drawsend.graphics.communication;
+package com.onyxmotion.drawsend.communication;
 
 import android.content.Context;
 import android.content.Intent;
@@ -9,7 +9,7 @@ import android.support.annotation.NonNull;
 import android.support.v4.content.LocalBroadcastManager;
 
 import com.google.android.gms.wearable.DataEvent;
-import com.onyxmotion.drawsend.graphics.helper.DebugLog;
+import com.onyxmotion.drawsend.helper.DebugLog;
 
 import java.io.Serializable;
 import java.util.List;
@@ -18,7 +18,7 @@ import java.util.List;
  * Instantiated by the WearCommunicationService to handle onStartCommand() calls
  * Created by Vivek on 2014-12-31.
  */
-public class DataHandler extends Handler {
+public class MobileHandler extends Handler {
 
 	private static final String DATA_THREAD = "DataThread";
 
@@ -27,12 +27,13 @@ public class DataHandler extends Handler {
 		ON_CREATE = 1,
 		ON_DESTROY = 2,
 
-	WEAR_SEND_PATH = 3,
-		WEAR_SEND_IMAGE = 100,
-		WEAR_RECEIVE_MESSAGE = 101,
-		WEAR_RECEIVE_OBJECT = 102;
+		WEAR_SEND_PATH = 3,
+		WEAR_RECEIVE_MESSAGE = 8,
+		WEAR_RECEIVE_OBJECT = 9,
 
-	public final static String ACTION = DataHandler.class.getName(),
+		GCM_INITIALIZE_ID = 10;
+
+	public final static String ACTION = MobileHandler.class.getName(),
 		WHAT = ACTION + ".what", STATUS = ACTION + ".status",
 		OBJ = ACTION + ".obj", SUCCESS = ACTION + ".success",
 		FAILURE = ACTION + ".failure";
@@ -44,17 +45,18 @@ public class DataHandler extends Handler {
 		return thread;
 	}
 
-	private MobileCommunicator mobileCommunicator;
+	private WearCommunicator wearCommunicator;
 	private Context context;
 	private Intent intent;
 	private LocalBroadcastManager local;
 
-	public DataHandler(@NonNull Context ctx) {
+
+	public MobileHandler(@NonNull Context ctx) {
 		super(getThread().getLooper());
 		if (ctx != ctx.getApplicationContext())
 			throw new IllegalArgumentException("ctx not application context");
 
-		mobileCommunicator = new MobileCommunicator();
+		wearCommunicator = new WearCommunicator();
 		context = ctx;
 		sendEmptyMessage(ON_CREATE);
 	}
@@ -68,13 +70,22 @@ public class DataHandler extends Handler {
 		DebugLog.LOGD(this, "Handling " + what);
 		switch (what) {
 
-
-
+			case GCM_INITIALIZE_ID:
+/*				if (obj instanceof Integer) {
+					userId = (int) obj;
+					String[] result = wearCommunicator.sendObject(
+						WearCommunicator.PATH_USER, userId);
+					if (result.length != 2)
+						throw new IllegalStateException("Improper result");
+					sendResult(what, !result[0].equals(SUCCESS) ? result
+						: GcmRegisterIdHelper.registerId(context, userId));
+				} else throw new IllegalArgumentException("obj not int");
+*/				return;
 
 			// TODO: Figure out what UI needs from intent for wear communication
 			case WEAR_RECEIVE_OBJECT:
 				if (obj instanceof List)
-					sendResult(what, mobileCommunicator.receiveObject(
+					sendResult(what, wearCommunicator.receiveObject(
 						context, (List<DataEvent>) obj));
 				else throw new IllegalArgumentException("obj not List");
 				return;
@@ -82,32 +93,21 @@ public class DataHandler extends Handler {
 			case WEAR_RECEIVE_MESSAGE:
 				if (obj instanceof String)
 					sendResult(what,
-						mobileCommunicator.receiveMessage((String) obj));
+						wearCommunicator.receiveMessage((String) obj));
 				else throw new IllegalArgumentException("obj not String");
 				return;
-
-			case WEAR_SEND_IMAGE:
-				if (obj instanceof byte[]) {
-					DebugLog.LOGD(this, "I'm sending an image");
-					sendResult(what,
-						mobileCommunicator.sendObject(
-							MobileCommunicator.PATH_IMAGE_WEAR_TO_MOBILE,
-							(byte[]) obj));
-				}
-				return;
-
 
 			case WEAR_SEND_PATH:
 				if (obj instanceof String)
 					sendResult(what,
-						mobileCommunicator.sendEmptyMessage((String) obj));
+						wearCommunicator.sendEmptyMessage((String) obj));
 				else throw new IllegalArgumentException("obj not String");
 				return;
 
 			case ON_DESTROY:
-				mobileCommunicator.disconnect();
-				mobileCommunicator.removeContext();
-				mobileCommunicator = null;
+				wearCommunicator.disconnect();
+				wearCommunicator.removeContext();
+				wearCommunicator = null;
 				local = null;
 				intent = null;
 				context = null;
@@ -116,8 +116,8 @@ public class DataHandler extends Handler {
 				return;
 
 			case ON_CREATE:
-				mobileCommunicator.setContext(context);
-				sendResult(what, mobileCommunicator.connect());
+				wearCommunicator.setContext(context);
+				sendResult(what, wearCommunicator.connect());
 				return;
 
 			case NONE: default:
@@ -130,10 +130,10 @@ public class DataHandler extends Handler {
 	}
 
 	private void wearSendObjectTime(int what, @NonNull String base,
-	                                @NonNull Object obj) {
+	    @NonNull Object obj) {
 		if (obj instanceof Serializable)
-			sendResult(what, mobileCommunicator.sendObject(
-				base + System.currentTimeMillis(), (Serializable) obj));
+			sendResult(what, wearCommunicator.sendObject(
+				base + System.currentTimeMillis(),(Serializable) obj));
 		else throw new IllegalArgumentException(base + " obj not Serializable");
 	}
 
@@ -143,11 +143,19 @@ public class DataHandler extends Handler {
 
 	private void sendResult(int what, @NonNull String[] result) {
 		if (local == null)  local  = LocalBroadcastManager.getInstance(context);
-		if (intent == null) intent = new Intent(DataHandler.ACTION);
+		if (intent == null) intent = new Intent(MobileHandler.ACTION);
 		if (result.length == 2)
 			local.sendBroadcast(intent.putExtra(WHAT, what)
 				.putExtra(STATUS, result[0].equals(SUCCESS))
 				.putExtra(OBJ, result[1]));
 		else throw new IllegalArgumentException("result not String[2]");
+	}
+
+	private void sendResult(int what, @NonNull byte[] result) {
+		if (local == null)  local  = LocalBroadcastManager.getInstance(context);
+		if (intent == null) intent = new Intent(MobileHandler.ACTION);
+		local.sendBroadcast(intent.putExtra(WHAT, what)
+			.putExtra(STATUS, true)
+			.putExtra(OBJ, result));
 	}
 }

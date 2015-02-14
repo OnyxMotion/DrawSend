@@ -1,4 +1,4 @@
-package com.onyxmotion.drawsend.graphics.communication;
+package com.onyxmotion.drawsend.communication;
 
 import android.content.Context;
 import android.support.annotation.NonNull;
@@ -9,7 +9,7 @@ import com.google.android.gms.wearable.DataItem;
 import com.google.android.gms.wearable.Node;
 import com.google.android.gms.wearable.PutDataRequest;
 import com.google.android.gms.wearable.Wearable;
-import com.onyxmotion.drawsend.graphics.helper.DebugLog;
+import com.onyxmotion.drawsend.helper.DebugLog;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -26,7 +26,7 @@ import java.util.concurrent.TimeUnit;
  * Assumes functions are called off of the UI thread, so blocking calls occur
  * Created by Vivek on 2015-01-05.
  */
-public class MobileCommunicator {
+public class WearCommunicator {
 
 	private final static String EMPTY = new String(new byte[0]);
 
@@ -34,10 +34,9 @@ public class MobileCommunicator {
 		PATH_BASE = "/com/onyxmotion/swishpro/drawsend",
 		PATH_IMAGE_WEAR_TO_MOBILE = PATH_BASE + "/image/weartomobile/",
 		PATH_IMAGE_MOBILE_TO_WEAR = PATH_BASE + "/image/mobiletowear/";
-
 	private GoogleApiClient client;
 
-	public MobileCommunicator() {
+	public WearCommunicator() {
 
 	}
 
@@ -60,7 +59,8 @@ public class MobileCommunicator {
 	}
 
 	public String[] sendObject(@NonNull String path, @NonNull Serializable obj){
-		String[] result = {DataHandler.FAILURE, path};
+		DebugLog.LOGD(this, "Obj sent it " + obj.toString());
+		String[] result = {MobileHandler.FAILURE, path};
 		try {
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
 			ObjectOutput out = new ObjectOutputStream(baos);
@@ -72,10 +72,8 @@ public class MobileCommunicator {
 			out.close();
 			baos.close();
 			if (isClientAvailable() && Wearable.DataApi.putDataItem(
-				client, putRequest).await().getStatus().isSuccess()) {
-				result[0] = DataHandler.SUCCESS;
-				DebugLog.LOGD(this, "Obj sent it ");
-			}
+				client, putRequest).await().getStatus().isSuccess())
+				result[0] = MobileHandler.SUCCESS;
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -83,14 +81,14 @@ public class MobileCommunicator {
 	}
 
 	public String[] sendMessage(@NonNull String path, @NonNull String message) {
-		String[] result = {DataHandler.FAILURE, path};
+		String[] result = {MobileHandler.FAILURE, path};
 		if (isClientAvailable()) {
 			List<Node> nodes
 				= Wearable.NodeApi.getConnectedNodes(client).await().getNodes();
 			if (!nodes.isEmpty() && Wearable.MessageApi.sendMessage(
 				client, nodes.get(0).getId(), path, message.getBytes())
 				.await().getStatus().isSuccess())
-				result[0] = DataHandler.SUCCESS;
+				result[0] = MobileHandler.SUCCESS;
 		}
 		return result;
 	}
@@ -99,9 +97,9 @@ public class MobileCommunicator {
 		return sendMessage(path, EMPTY);
 	}
 
-	public String[] receiveObject(@NonNull Context context,
+	public byte[] receiveObject(@NonNull Context context,
 	    @NonNull List<DataEvent> events) {
-
+		DebugLog.LOGD(this, "I'm receiving an object");
 		Object object;
 		String path = null;
 		DataItem data;
@@ -114,8 +112,9 @@ public class MobileCommunicator {
 			if (object == null) continue;
 			path = data.getUri().getPath();
 
-			if (path.contains(PATH_IMAGE_MOBILE_TO_WEAR)) {
-
+			if (path.contains(PATH_IMAGE_WEAR_TO_MOBILE)) {
+				if (object instanceof byte[])
+					return (byte[]) object;
 			}
 
 			if (isClientAvailable())
@@ -123,14 +122,14 @@ public class MobileCommunicator {
 					client, data.getUri()).await().getStatus().isSuccess();
 			else isSuccess = false;
 		}
-
-		return new String[] {isSuccess ? DataHandler.SUCCESS
-			: DataHandler.FAILURE, path != null ? path : EMPTY};
+		return new byte[0];
+//		return new String[] {isSuccess ? MobileHandler.SUCCESS
+//			: MobileHandler.FAILURE, path != null ? path : EMPTY};
 	}
 
 	public String[] receiveMessage(@NonNull String path) {
-		String[] result = {DataHandler.FAILURE, path};
-		if (System.currentTimeMillis() > 0) result[0] = DataHandler.SUCCESS;
+		String[] result = {MobileHandler.FAILURE, path};
+		if (System.currentTimeMillis() > 0) result[0] = MobileHandler.SUCCESS;
 		return result;
 	}
 
