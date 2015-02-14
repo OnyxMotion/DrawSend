@@ -35,7 +35,7 @@ public class PaintActivity extends Activity
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_paint);
+        setContentView(R.layout.view_paint);
 
 		paintView = (PaintView) findViewById(R.id.paint_view);
 	    findViewById(R.id.colorpicker).setOnClickListener(this);
